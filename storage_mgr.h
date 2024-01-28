@@ -41,3 +41,8 @@ extern RC appendEmptyBlock (SM_FileHandle *fHandle);
 extern RC ensureCapacity (int numberOfPages, SM_FileHandle *fHandle);
 
 #endif
+
+/*  
+------------------------------User Defined Macros---------------------------------------
+*/
+#define openFile(fp, fName, mode)  fp = fopen(fName, mode)
