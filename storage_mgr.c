@@ -83,3 +83,31 @@ extern RC openPageFile(char *fileName, SM_FileHandle *fHandle)
   // Return success code
   return returnCode;
 }
+
+extern RC closePageFile(SM_FileHandle *fHandle){
+// Check if the file handle is NULL or if the file is not initialized
+    openFile(fp, fHandle->fileName, "r+");
+    printf("************Closing Page File****************\n");
+    int returnCode = RC_OK;
+    if (fHandle == NULL || !fp) {
+        returnCode = RC_FILE_NOT_FOUND;
+        RC_message = "ERR: FILE DOES NOT EXIST!";
+        printError(*RC_message);
+        return returnCode;
+    }
+
+    // Close the file
+    int closeStatus= fclose(fHandle->mgmtInfo);
+
+    if(closeStatus==0){
+      returnCode = RC_OK;
+      RC_message = "CLOSED SUCCESFULLY";
+      printError(*RC_message);
+      return returnCode;
+    }else{
+      returnCode = RC_CLOSE_FILE_FAILED;
+      RC_message = "ERR: UNABLE TO CLOSE FILE";
+      printError(*RC_message);
+      return returnCode;
+    }
+}
