@@ -45,4 +45,6 @@ extern RC ensureCapacity (int numberOfPages, SM_FileHandle *fHandle);
 /*  
 ------------------------------User Defined Macros---------------------------------------
 */
-#define openFile(fp, fName, mode)  fp = fopen(fName, mode)
+#define openFile(fp, fName, mode) do { \
+    fp = fopen(fName, mode); \
+} while(0)
