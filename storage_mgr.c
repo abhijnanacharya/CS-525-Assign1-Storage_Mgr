@@ -161,3 +161,38 @@ extern RC destroyPageFile(char *fileName)
     return returnCode;
   }
 }
+
+//Author: Rana Feyza Soylu
+extern RC readBlock (int pageNum, SM_FileHandle *fHandle, SM_PageHandle memPage)
+{
+  if (fHandle == NULL){ //Making sure file has been initialized/opened
+    return RC_FILE_HANDLE_NOT_INIT;
+  }
+  if (fHandle->totalNumPages - 1 < pageNum || pageNum < 0){
+    return RC_READ_NON_EXISTING_PAGE;
+  } else {
+    //Placing the pointer at the start of the block that we want to read
+    fseek(fHandle->mgmtInfo,pageNum*PAGE_SIZE,SEEK_SET); //SEEK_SET starts it from the beginning of the file, the offset is the total amount we need to move to get to pageNum
+    fHandle->curPagePos = pageNum; //Setting current page position to pagenum
+    fread(memPage,1,PAGE_SIZE,fHandle->mgmtInfo); //Read one page
+    return RC_OK;
+  }
+}
+
+//Author: Rana Feyza Soylu
+extern int getBlockPos (SM_FileHandle *fHandle)
+{
+  if (fHandle == NULL){ //Making sure file has been initialized/opened
+    return RC_FILE_HANDLE_NOT_INIT;
+  }
+  return fHandle->curPagePos; //Returns the current page/block position
+}
+
+//Author: Rana Feyza Soylu
+extern RC readFirstBlock (SM_FileHandle *fHandle, SM_PageHandle memPage)
+{
+  if (fHandle == NULL){ //Making sure file has been initialized/opened
+    return RC_FILE_HANDLE_NOT_INIT;
+  }
+  return readBlock(0,fHandle,memPage); //Reads first block using predefined function
+}
