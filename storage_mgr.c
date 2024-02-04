@@ -362,10 +362,15 @@ extern RC readBlock (int pageNum, SM_FileHandle *fHandle, SM_PageHandle memPage)
     return RC_READ_NON_EXISTING_PAGE;
   } else {
     //Placing the pointer at the start of the block that we want to read
-    fseek(fHandle->mgmtInfo,pageNum*PAGE_SIZE,SEEK_SET); //SEEK_SET starts it from the beginning of the file, the offset is the total amount we need to move to get to pageNum
-    fHandle->curPagePos = pageNum; //Setting current page position to pagenum
-    fread(memPage,1,PAGE_SIZE,fHandle->mgmtInfo); //Read one page
-    return RC_OK;
+    int rval = fseek(fHandle->mgmtInfo,pageNum*PAGE_SIZE,SEEK_SET); //SEEK_SET starts it from the beginning of the file, the offset is the total amount we need to move to get to pageNum
+    if (rval == 0){
+      fHandle->curPagePos = pageNum; //Setting current page position to pagenum
+      fread(memPage,1,PAGE_SIZE,fHandle->mgmtInfo); //Read one page
+      return RC_OK;
+    }
+    else{
+      return RC_MEM_ALLOC_FAILED;
+    }
   }
 }
 
