@@ -31,7 +31,7 @@ extern RC createPageFile(char *fName)
   size_t blockNum = PAGE_SIZE;
   size_t blockSize = sizeof(char);
   // Allocating memory to PAGE_SIZE element
-  SM_PageHandle newblankPage = (SM_PageHandle)calloc(blockNum,blockSize);
+  SM_PageHandle newblankPage = (SM_PageHandle)calloc(blockNum, blockSize);
 
   if (newblankPage == NULL)
   {
@@ -164,87 +164,62 @@ extern RC destroyPageFile(char *fileName)
   }
 }
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 /* writing blocks to a page file */
 
-RC seekToPage(SM_FileHandle *fHandle, int pageNum) {
-    int offset = pageNum * PAGE_SIZE;
-    if (fseek(fHandle->mgmtInfo->fd, offset, SEEK_SET) < 0) {
-        return RC_WRITE_FAILED;
-    }
-    return RC_OK;
+RC seekToPage(SM_FileHandle *fHandle, int pageNum)
+{
+  int offset = pageNum * PAGE_SIZE * sizeof(char);
+  if (fseek(fHandle->mgmtInfo, offset, SEEK_SET) != 0)
+  {
+    return RC_SEEK_ERROR;
+  }
+  return RC_OK;
+}
+int seekToEnd(FILE* handle, long long fSet, int seekLoc){
+  return fseek(handle, fSet, seekLoc);
+
 }
 
-RC writeBlock(int pageNum, SM_FileHandle *fHandle, SM_PageHandle memPage) {
+RC writeBlock(int pageNum, SM_FileHandle *fHandle, SM_PageHandle memPage)
+{
 
-    if (fHandle->mgmtInfo->fd == NULL) {
-        return RC_WRITE_FAILED;
-    } else if (pageNum < 0 || pageNum >= fHandle->totalNumPages) {
-        return RC_READ_NON_EXISTING_PAGE;
-    }
+  if (fHandle->mgmtInfo == NULL)
+  {
+    return RC_WRITE_FAILED;
+  }
+  else if (pageNum < 0 || pageNum >= fHandle->totalNumPages)
+  {
+    return RC_READ_NON_EXISTING_PAGE;
+  }
 
-    RC rc = seekToPage(fHandle, pageNum);
-    if (rc != RC_OK) {
-        return rc;
-    }
+  RC rc = seekToPage(fHandle, pageNum);
+  if (rc != RC_OK)
+  {
+    return rc;
+  }
 
-    size_t num_items = fwrite(memPage, PAGE_SIZE, 1, fHandle->mgmtInfo->fd);
-    if (num_items != 1) {
-        return RC_WRITE_FAILED;
-    }
+  size_t num_items = fwrite(memPage, sizeof(char), PAGE_SIZE, fHandle->mgmtInfo);
+  if (num_items != PAGE_SIZE)
+  {
+    return RC_WRITE_FAILED;
+  }
 
-    fHandle->curPagePos = pageNum + 1;
-    return RC_OK;
+  fHandle->curPagePos = pageNum;
+  return RC_OK;
 }
-
-
-
-
 
 // Function to write data from a memory page to the current block of a file
-RC writeCurrentBlock(SM_FileHandle* fileHandle, SM_PageHandle memoryPage)
+RC writeCurrentBlock(SM_FileHandle *fileHandle, SM_PageHandle memoryPage)
 {
-    // Get the block position of the current page in the file
-    int blockPos = getBlockPos(fileHandle);
+  // Get the block position of the current page in the file
+  int blockPos = getBlockPos(fileHandle);
 
-    // Write the block data to the file using the memory page
-    RC rc = writeBlock(blockPos, fileHandle, memoryPage);
+  // Write the block data to the file using the memory page
+  RC rc = writeBlock(blockPos, fileHandle, memoryPage);
 
-    // Return the result code from the writeBlock function
-    return rc;
+  // Return the result code from the writeBlock function
+  return rc;
 }
-
-
-
-
 
 /**
  * Appends an empty page to the end of the file associated with the given file handle.
@@ -253,48 +228,94 @@ RC writeCurrentBlock(SM_FileHandle* fileHandle, SM_PageHandle memoryPage)
  *
  * @return RC_OK on success, or an error code if the operation fails.
  */
-RC appendEmptyBlock(SM_FileHandle *fHandle) {
-    // Get the file descriptor from the file handle.
-    int fd = fHandle->mgmtInfo->fd;
 
-    // Check if the file descriptor is valid.
-    if (fd < 0) {
-        // Return an error code if the file descriptor is not valid.
-        return RC_FILE_NOT_FOUND;
+// RC appendEmptyBlock(SM_FileHandle *fHandle)
+// {
+//   // Get the file descriptor from the file handle.
+//   int fd = fHandle->mgmtInfo;
+
+//   // Check if the file descriptor is valid.
+//   if (fd < 0)
+//   {
+//     // Return an error code if the file descriptor is not valid.
+//     return RC_FILE_NOT_FOUND;
+//   }
+
+//   // Move the file position indicator to the end of the file.
+//   off_t offset = lseek(fd, 0, SEEK_END);
+
+//   // Check if the lseek operation failed.
+//   if (offset < 0)
+//   {
+//     // Return an error code if the lseek operation failed.
+//     return RC_ALLOCATION_FAILED;
+//   }
+
+//   // Create a buffer to hold the empty page.
+//   char emptyPage[PAGE_SIZE];
+
+//   // Fill the buffer with null characters.
+//   memset(emptyPage, '\0', PAGE_SIZE);
+
+//   // Write the empty page to the file.
+//   ssize_t numWritten = write(fd, emptyPage, PAGE_SIZE);
+
+//   // Check if the write operation failed.
+//   if (numWritten != PAGE_SIZE)
+//   {
+//     // Return an error code if the write operation failed.
+//     return RC_ALLOCATION_FAILED;
+//   }
+
+//   // Update the file handle to reflect the new page.
+//   fHandle->totalNumPages += 1;
+//   fHandle->curPagePos = (fHandle->totalNumPages - 1);
+
+//   // Return a success code.
+//   return RC_OK;
+// }
+
+extern RC appendEmptyBlock(SM_FileHandle *fHandle) {
+    int seekResult;
+    size_t writeBlockSize;
+    SM_PageHandle emptyPage;
+
+    // Allocate memory for an empty page
+    emptyPage = (SM_PageHandle) calloc(PAGE_SIZE, sizeof(char));
+    if (emptyPage == NULL) {
+        return RC_WRITE_FAILED;
     }
 
-    // Move the file position indicator to the end of the file.
-    off_t offset = lseek(fd, 0, SEEK_END);
-
-    // Check if the lseek operation failed.
-    if (offset < 0) {
-        // Return an error code if the lseek operation failed.
-        return RC_ALLOCATION_FAILED;
+    // Set pointer to the end of the file
+    seekResult = seekToEnd(fHandle->mgmtInfo, 0, SEEK_END);
+    if (seekResult != 0) {
+        free(emptyPage);
+        return RC_WRITE_FAILED;
     }
 
-    // Create a buffer to hold the empty page.
-    char emptyPage[PAGE_SIZE];
-
-    // Fill the buffer with null characters.
-    memset(emptyPage, '\0', PAGE_SIZE);
-
-    // Write the empty page to the file.
-    ssize_t numWritten = write(fd, emptyPage, PAGE_SIZE);
-
-    // Check if the write operation failed.
-    if (numWritten != PAGE_SIZE) {
-        // Return an error code if the write operation failed.
-        return RC_ALLOCATION_FAILED;
+    // Write the empty page to the file
+    writeBlockSize = fwrite(emptyPage, sizeof(char), PAGE_SIZE, fHandle->mgmtInfo);
+    if (writeBlockSize != PAGE_SIZE) {
+        free(emptyPage);
+        return RC_WRITE_FAILED;
     }
 
-    // Update the file handle to reflect the new page.
+    // Update file handle information
     fHandle->totalNumPages += 1;
-    fHandle->curPagePos = (fHandle->totalNumPages - 1);
+    fHandle->curPagePos = fHandle->totalNumPages;
 
-    // Return a success code.
+    // Rewind and update total number of pages in the file
+    rewind(fHandle->mgmtInfo);
+    fprintf(fHandle->mgmtInfo, "%d\n", fHandle->totalNumPages);
+
+    // Set pointer to the beginning of the file
+    seekToEnd(fHandle->mgmtInfo, 0, SEEK_SET);
+
+    // Clean up allocated memory
+    free(emptyPage);
+
     return RC_OK;
 }
-
 
 /*
  * Ensures that the given file handle has a capacity of at least the specified number of pages.
@@ -308,26 +329,27 @@ RC appendEmptyBlock(SM_FileHandle *fHandle) {
  * Returns:
  *  RC_OK if the capacity was successfully ensured, or RC_ALLOCATION_FAILED if the allocation of new blocks failed.
  */
-RC ensureCapacity(int numberOfPages, SM_FileHandle *fHandle) {
+RC ensureCapacity(int numberOfPages, SM_FileHandle *fHandle)
+{
 
-  
-    /* While the current capacity is less than the desired capacity*/
+  /* While the current capacity is less than the desired capacity*/
 
-  
-    while (fHandle->totalNumPages < numberOfPages) {
-      
-        // Attempting to append an empty block to the file handle.
-      
-        RC rc = appendEmptyBlock(fHandle);
+  while (fHandle->totalNumPages < numberOfPages)
+  {
 
-        // If the allocation of the new block failed, return an error code.
-        if (rc != RC_OK) {
+    // Attempting to append an empty block to the file handle.
 
-          /*Returning RC_ALLOCATION_FAILED*/
-            return RC_ALLOCATION_FAILED;
-        }
+    RC rc = appendEmptyBlock(fHandle);
+
+    // If the allocation of the new block failed, return an error code.
+    if (rc != RC_OK)
+    {
+
+      /*Returning RC_ALLOCATION_FAILED*/
+      return RC_ALLOCATION_FAILED;
     }
+  }
 
-    // If the loop completed without returning an error, the capacity was successfully ensured.
-    return RC_OK;
+  // If the loop completed without returning an error, the capacity was successfully ensured.
+  return RC_OK;
 }
