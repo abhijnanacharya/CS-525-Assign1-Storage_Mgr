@@ -202,7 +202,38 @@ extern RC readFirstBlock (SM_FileHandle *fHandle, SM_PageHandle memPage)
   return readBlock(0,fHandle,memPage); //Reads first block using predefined function
 }
 
+extern RC readPreviousBlock(SM_FileHandle *fHandle, SM_PageHandle memPage){
+    int curBlockPos = getBlockPos(fHandle);
+    if(curBlockPos == 0){
+        return RC_READ_NON_EXISTING_PAGE;
+    }
 
+    return readBlock(curBlockPos - 1, fHandle, memPage);
+}
+extern RC readCurrentBlock(SM_FileHandle *fHandle, SM_PageHandle memPage){
+    int curBlockPos = getBlockPos(fHandle);
+    if(curBlockPos == -1){
+        return RC_READ_NON_EXISTING_PAGE;
+    }
+
+    return readBlock(curBlockPos, fHandle, memPage);
+}
+extern RC readNextBlock(SM_FileHandle *fHandle, SM_PageHandle memPage){
+    int curBlockPos = getBlockPos(fHandle);
+    if(curBlockPos == getNumberOfBlocks(fHandle) - 1){
+        return RC_READ_NON_EXISTING_PAGE;
+    }
+
+    return readBlock(curBlockPos + 1, fHandle, memPage);
+}
+extern RC readLastBlock(SM_FileHandle *fHandle, SM_PageHandle memPage){
+    int lastBlockPos = getNumberOfBlocks(fHandle) - 1;
+    if(getBlockPos(fHandle) == lastBlockPos){
+        return RC_OK;
+    }
+
+    return readBlock(lastBlockPos, fHandle, memPage);
+}
 /* writing blocks to a page file */
 
 RC seekToPage(SM_FileHandle *fHandle, int pageNum)
