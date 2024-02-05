@@ -175,9 +175,9 @@ RC seekToPage(SM_FileHandle *fHandle, int pageNum)
   }
   return RC_OK;
 }
-int seekToEnd(FILE* handle, long long fSet, int seekLoc){
+int seekToEnd(FILE *handle, long long fSet, int seekLoc)
+{
   return fseek(handle, fSet, seekLoc);
-
 }
 
 RC writeBlock(int pageNum, SM_FileHandle *fHandle, SM_PageHandle memPage)
@@ -275,46 +275,50 @@ RC writeCurrentBlock(SM_FileHandle *fileHandle, SM_PageHandle memoryPage)
 //   return RC_OK;
 // }
 
-extern RC appendEmptyBlock(SM_FileHandle *fHandle) {
-    int seekResult;
-    size_t writeBlockSize;
-    SM_PageHandle emptyPage;
+extern RC appendEmptyBlock(SM_FileHandle *fHandle)
+{
+  int seekResult;
+  size_t writeBlockSize;
+  SM_PageHandle emptyPage;
 
-    // Allocate memory for an empty page
-    emptyPage = (SM_PageHandle) calloc(PAGE_SIZE, sizeof(char));
-    if (emptyPage == NULL) {
-        return RC_WRITE_FAILED;
-    }
+  // Allocate memory for an empty page
+  emptyPage = (SM_PageHandle)calloc(PAGE_SIZE, sizeof(char));
+  if (emptyPage == NULL)
+  {
+    return RC_WRITE_FAILED;
+  }
 
-    // Set pointer to the end of the file
-    seekResult = seekToEnd(fHandle->mgmtInfo, 0, SEEK_END);
-    if (seekResult != 0) {
-        free(emptyPage);
-        return RC_WRITE_FAILED;
-    }
-
-    // Write the empty page to the file
-    writeBlockSize = fwrite(emptyPage, sizeof(char), PAGE_SIZE, fHandle->mgmtInfo);
-    if (writeBlockSize != PAGE_SIZE) {
-        free(emptyPage);
-        return RC_WRITE_FAILED;
-    }
-
-    // Update file handle information
-    fHandle->totalNumPages += 1;
-    fHandle->curPagePos = fHandle->totalNumPages;
-
-    // Rewind and update total number of pages in the file
-    rewind(fHandle->mgmtInfo);
-    fprintf(fHandle->mgmtInfo, "%d\n", fHandle->totalNumPages);
-
-    // Set pointer to the beginning of the file
-    seekToEnd(fHandle->mgmtInfo, 0, SEEK_SET);
-
-    // Clean up allocated memory
+  // Set pointer to the end of the file
+  seekResult = seekToEnd(fHandle->mgmtInfo, 0, SEEK_END);
+  if (seekResult != 0)
+  {
     free(emptyPage);
+    return RC_WRITE_FAILED;
+  }
 
-    return RC_OK;
+  // Write the empty page to the file
+  writeBlockSize = fwrite(emptyPage, sizeof(char), PAGE_SIZE, fHandle->mgmtInfo);
+  if (writeBlockSize != PAGE_SIZE)
+  {
+    free(emptyPage);
+    return RC_WRITE_FAILED;
+  }
+
+  // Update file handle information
+  fHandle->totalNumPages += 1;
+  fHandle->curPagePos = fHandle->totalNumPages;
+
+  // Rewind and update total number of pages in the file
+  rewind(fHandle->mgmtInfo);
+  fprintf(fHandle->mgmtInfo, "%d\n", fHandle->totalNumPages);
+
+  // Set pointer to the beginning of the file
+  seekToEnd(fHandle->mgmtInfo, 0, SEEK_SET);
+
+  // Clean up allocated memory
+  free(emptyPage);
+
+  return RC_OK;
 }
 
 /*
@@ -352,72 +356,54 @@ RC ensureCapacity(int numberOfPages, SM_FileHandle *fHandle)
 
   // If the loop completed without returning an error, the capacity was successfully ensured.
   return RC_OK;
-//Author: Rana Feyza Soylu
-extern RC readBlock (int pageNum, SM_FileHandle *fHandle, SM_PageHandle memPage)
+}
+// Author: Rana Feyza Soylu
+extern RC readBlock(int pageNum, SM_FileHandle *fHandle, SM_PageHandle memPage)
 {
-  if (fHandle == NULL){ //Making sure file has been initialized/opened
+  if (fHandle == NULL)
+  { // Making sure file has been initialized/opened
     return RC_FILE_HANDLE_NOT_INIT;
   }
-  if (fHandle->totalNumPages - 1 < pageNum || pageNum < 0){
+  if (fHandle->totalNumPages - 1 < pageNum || pageNum < 0)
+  {
     return RC_READ_NON_EXISTING_PAGE;
-  } else {
-    //Placing the pointer at the start of the block that we want to read
-    int rval = fseek(fHandle->mgmtInfo,pageNum*PAGE_SIZE,SEEK_SET); //SEEK_SET starts it from the beginning of the file, the offset is the total amount we need to move to get to pageNum
-    if (rval == 0){
-      fHandle->curPagePos = pageNum; //Setting current page position to pagenum
-      fread(memPage,1,PAGE_SIZE,fHandle->mgmtInfo); //Read one page
+  }
+  else
+  {
+    // Placing the pointer at the start of the block that we want to read
+    int rval = fseek(fHandle->mgmtInfo, pageNum * PAGE_SIZE, SEEK_SET); // SEEK_SET starts it from the beginning of the file, the offset is the total amount we need to move to get to pageNum
+    if (rval == 0)
+    {
+      fHandle->curPagePos = pageNum;                   // Setting current page position to pagenum
+      fread(memPage, 1, PAGE_SIZE, fHandle->mgmtInfo); // Read one page
       return RC_OK;
     }
-    else{
+    else
+    {
       return RC_MEM_ALLOC_FAILED;
     }
   }
 }
 
-//Author: Rana Feyza Soylu
-extern int getBlockPos (SM_FileHandle *fHandle)
+// Author: Rana Feyza Soylu
+extern int getBlockPos(SM_FileHandle *fHandle)
 {
-  if (fHandle == NULL){ //Making sure file has been initialized/opened
+  if (fHandle == NULL)
+  { // Making sure file has been initialized/opened
     return RC_FILE_HANDLE_NOT_INIT;
   }
-  return fHandle->curPagePos; //Returns the current page/block position
+  return fHandle->curPagePos; // Returns the current page/block position
 }
 
-//Author: Rana Feyza Soylu
-extern RC readFirstBlock (SM_FileHandle *fHandle, SM_PageHandle memPage)
+// Author: Rana Feyza Soylu
+extern RC readFirstBlock(SM_FileHandle *fHandle, SM_PageHandle memPage)
 {
-  if (fHandle == NULL){ //Making sure file has been initialized/opened
+  if (fHandle == NULL)
+  { // Making sure file has been initialized/opened
     return RC_FILE_HANDLE_NOT_INIT;
   }
-  return readBlock(0,fHandle,memPage); //Reads first block using predefined function
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+  return readBlock(0, fHandle, memPage); // Reads first block using predefined function
+}
 
 /* writing blocks to a page file */
 
@@ -430,9 +416,9 @@ RC seekToPage(SM_FileHandle *fHandle, int pageNum)
   }
   return RC_OK;
 }
-int seekToEnd(FILE* handle, long long fSet, int seekLoc){
+int seekToEnd(FILE *handle, long long fSet, int seekLoc)
+{
   return fseek(handle, fSet, seekLoc);
-
 }
 
 RC writeBlock(int pageNum, SM_FileHandle *fHandle, SM_PageHandle memPage)
@@ -530,46 +516,50 @@ RC writeCurrentBlock(SM_FileHandle *fileHandle, SM_PageHandle memoryPage)
 //   return RC_OK;
 // }
 
-extern RC appendEmptyBlock(SM_FileHandle *fHandle) {
-    int seekResult;
-    size_t writeBlockSize;
-    SM_PageHandle emptyPage;
+extern RC appendEmptyBlock(SM_FileHandle *fHandle)
+{
+  int seekResult;
+  size_t writeBlockSize;
+  SM_PageHandle emptyPage;
 
-    // Allocate memory for an empty page
-    emptyPage = (SM_PageHandle) calloc(PAGE_SIZE, sizeof(char));
-    if (emptyPage == NULL) {
-        return RC_WRITE_FAILED;
-    }
+  // Allocate memory for an empty page
+  emptyPage = (SM_PageHandle)calloc(PAGE_SIZE, sizeof(char));
+  if (emptyPage == NULL)
+  {
+    return RC_WRITE_FAILED;
+  }
 
-    // Set pointer to the end of the file
-    seekResult = seekToEnd(fHandle->mgmtInfo, 0, SEEK_END);
-    if (seekResult != 0) {
-        free(emptyPage);
-        return RC_WRITE_FAILED;
-    }
-
-    // Write the empty page to the file
-    writeBlockSize = fwrite(emptyPage, sizeof(char), PAGE_SIZE, fHandle->mgmtInfo);
-    if (writeBlockSize != PAGE_SIZE) {
-        free(emptyPage);
-        return RC_WRITE_FAILED;
-    }
-
-    // Update file handle information
-    fHandle->totalNumPages += 1;
-    fHandle->curPagePos = fHandle->totalNumPages;
-
-    // Rewind and update total number of pages in the file
-    rewind(fHandle->mgmtInfo);
-    fprintf(fHandle->mgmtInfo, "%d\n", fHandle->totalNumPages);
-
-    // Set pointer to the beginning of the file
-    seekToEnd(fHandle->mgmtInfo, 0, SEEK_SET);
-
-    // Clean up allocated memory
+  // Set pointer to the end of the file
+  seekResult = seekToEnd(fHandle->mgmtInfo, 0, SEEK_END);
+  if (seekResult != 0)
+  {
     free(emptyPage);
+    return RC_WRITE_FAILED;
+  }
 
-    return RC_OK;
+  // Write the empty page to the file
+  writeBlockSize = fwrite(emptyPage, sizeof(char), PAGE_SIZE, fHandle->mgmtInfo);
+  if (writeBlockSize != PAGE_SIZE)
+  {
+    free(emptyPage);
+    return RC_WRITE_FAILED;
+  }
+
+  // Update file handle information
+  fHandle->totalNumPages += 1;
+  fHandle->curPagePos = fHandle->totalNumPages;
+
+  // Rewind and update total number of pages in the file
+  rewind(fHandle->mgmtInfo);
+  fprintf(fHandle->mgmtInfo, "%d\n", fHandle->totalNumPages);
+
+  // Set pointer to the beginning of the file
+  seekToEnd(fHandle->mgmtInfo, 0, SEEK_SET);
+
+  // Clean up allocated memory
+  free(emptyPage);
+
+  return RC_OK;
 }
 
 /*
