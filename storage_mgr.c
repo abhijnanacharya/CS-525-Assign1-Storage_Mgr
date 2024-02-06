@@ -202,38 +202,75 @@ extern RC readFirstBlock (SM_FileHandle *fHandle, SM_PageHandle memPage)
   return readBlock(0,fHandle,memPage); //Reads first block using predefined function
 }
 
-extern RC readPreviousBlock(SM_FileHandle *fHandle, SM_PageHandle memPage){
-    int curBlockPos = getBlockPos(fHandle);
-    if(curBlockPos == 0){
+
+extern RC readPreviousBlock(SM_FileHandle *fileDescriptor, SM_PageHandle pageData){
+    // Checking if the file handle is not initialized
+    if (fileDescriptor == NULL){
+        return RC_FILE_HANDLE_NOT_INIT;
+    }
+    // Retrieve the current position in the file
+    int currentPosition = fileDescriptor->curPagePos;
+    // If the current position is at the start, there's no previous page to fetch
+    if(currentPosition == 0){
         return RC_READ_NON_EXISTING_PAGE;
     }
 
-    return readBlock(curBlockPos - 1, fHandle, memPage);
+    // Rreading the previous page based on the current position
+    return readBlock(currentPosition - 1, fileDescriptor, pageData);
 }
-extern RC readCurrentBlock(SM_FileHandle *fHandle, SM_PageHandle memPage){
-    int curBlockPos = getBlockPos(fHandle);
-    if(curBlockPos == -1){
+
+extern RC readCurrentBlock(SM_FileHandle *fileDescriptor, SM_PageHandle pageData){
+    // Validate the file handle initialization
+    if (fileDescriptor == NULL){
+        return RC_FILE_HANDLE_NOT_INIT;
+    }
+    // Obtain the current page position
+    int currentPosition = fileDescriptor->curPagePos;
+    // Checking if the current position is valid within the file's range
+    if(currentPosition < 0 || currentPosition >= fileDescriptor->totalNumPages){
         return RC_READ_NON_EXISTING_PAGE;
     }
 
-    return readBlock(curBlockPos, fHandle, memPage);
+    // Fetching the current page using the current position
+
+    return readBlock(currentPosition, fileDescriptor, pageData);
 }
-extern RC readNextBlock(SM_FileHandle *fHandle, SM_PageHandle memPage){
-    int curBlockPos = getBlockPos(fHandle);
-    if(curBlockPos == getNumberOfBlocks(fHandle) - 1){
+
+extern RC readNextBlock(SM_FileHandle *fileDescriptor, SM_PageHandle pageData){
+    // Ensure the file handle has been properly initialized
+    if (fileDescriptor == NULL){
+        return RC_FILE_HANDLE_NOT_INIT;
+    }
+    // Determine the current page's position
+    int currentPosition = fileDescriptor->curPagePos;
+    // If the current position is at the last page, there is no next page
+    if(currentPosition >= fileDescriptor->totalNumPages - 1){
         return RC_READ_NON_EXISTING_PAGE;
     }
 
-    return readBlock(curBlockPos + 1, fHandle, memPage);
+    // Reading the next page by incrementing the current position
+    return readBlock(currentPosition + 1, fileDescriptor, pageData);
 }
-extern RC readLastBlock(SM_FileHandle *fHandle, SM_PageHandle memPage){
-    int lastBlockPos = getNumberOfBlocks(fHandle) - 1;
-    if(getBlockPos(fHandle) == lastBlockPos){
-        return RC_OK;
+
+extern RC readLastBlock(SM_FileHandle *fileDescriptor, SM_PageHandle pageData){
+    // Check for an uninitialized file handle
+    if (fileDescriptor == NULL){
+        return RC_FILE_HANDLE_NOT_INIT;
+    }
+    // Get the position of the last page in the file
+    int finalPosition = fileDescriptor->totalNumPages - 1;
+    // If there are no pages in the file, return an error
+    if(finalPosition < 0){
+        return RC_READ_NON_EXISTING_PAGE;
     }
 
-    return readBlock(lastBlockPos, fHandle, memPage);
+    // Accessing the last page
+    return readBlock(finalPosition, fileDescriptor, pageData);
 }
+
+
+
+
 /* writing blocks to a page file */
 
 RC seekToPage(SM_FileHandle *fHandle, int pageNum)
